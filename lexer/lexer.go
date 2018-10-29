@@ -29,7 +29,6 @@ func (lexer *Lexer) NextToken() token.Token {
 
 	switch lexer.char {
 	case '!':
-		tok = token.NewToken(token.BANG, lexer.char)
 		if lexer.peekChar() == '=' {
 			firstChar := lexer.char
 			lexer.readChar()
