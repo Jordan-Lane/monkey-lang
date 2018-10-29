@@ -22,8 +22,8 @@ const (
 	PLUS = "+"
 
 	// Punctuation
-	COMMA = ','
-	SEMICOLON = ';'
+	COMMA = ","
+	SEMICOLON = ";"
 
 	// Brackets
 	LPAREN = "("
