@@ -19,8 +19,18 @@ const (
 	INT   = "INT"
 
 	// Operators
+	BANG   = "!"
 	ASSIGN = "="
 	PLUS   = "+"
+	MINUS  = "-"
+	STAR   = "*"
+	SLASH  = "/"
+
+	// Comparators
+	EQUAL      = "=="
+	BANG_EQUAL = "!="
+	LESS       = "<"
+	GREATER    = ">"
 
 	// Punctuation
 	COMMA     = ","
@@ -35,11 +45,21 @@ const (
 	// Keywords
 	LET      = "LET"
 	FUNCTION = "FUNCTION"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
+	IF       = "IF"
+	ELSE     = "ELSE"
+	RETURN   = "RETURN"
 )
 
 var keywords = map[string]TokenType{
-	"fn":  FUNCTION,
-	"let": LET,
+	"let":    LET,
+	"fn":     FUNCTION,
+	"true":   TRUE,
+	"false":  FALSE,
+	"if":     IF,
+	"else":   ELSE,
+	"return": RETURN,
 }
 
 // NewToken - Create a new Token from a tokenType and char

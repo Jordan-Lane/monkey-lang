@@ -20,17 +20,6 @@ func New(input string) *Lexer {
 	return lexer
 }
 
-// readCharacter - Reads the next ASCII character of the input string and sets the Lexer's current char
-func (lexer *Lexer) readChar() {
-	if lexer.readPosition >= len(lexer.input) {
-		lexer.char = 0 //ASCII null
-	} else {
-		lexer.char = lexer.input[lexer.readPosition]
-	}
-	lexer.position = lexer.readPosition
-	lexer.readPosition++
-}
-
 // NextToken - Returns the next token of the input string
 // This is where an enum for the token would be beneificial
 func (lexer *Lexer) NextToken() token.Token {
@@ -39,10 +28,37 @@ func (lexer *Lexer) NextToken() token.Token {
 	lexer.skipWhitespace()
 
 	switch lexer.char {
+	case '!':
+		tok = token.NewToken(token.BANG, lexer.char)
+		if lexer.peekChar() == '=' {
+			firstChar := lexer.char
+			lexer.readChar()
+			literal := string(firstChar) + string(lexer.char)
+			tok = token.Token{Type: token.BANG_EQUAL, Literal: literal}
+		} else {
+			tok = token.NewToken(token.BANG, lexer.char)
+		}
 	case '=':
-		tok = token.NewToken(token.ASSIGN, lexer.char)
+		if lexer.peekChar() == '=' {
+			firstChar := lexer.char
+			lexer.readChar()
+			literal := string(firstChar) + string(lexer.char)
+			tok = token.Token{Type: token.EQUAL, Literal: literal}
+		} else {
+			tok = token.NewToken(token.ASSIGN, lexer.char)
+		}
 	case '+':
 		tok = token.NewToken(token.PLUS, lexer.char)
+	case '-':
+		tok = token.NewToken(token.MINUS, lexer.char)
+	case '*':
+		tok = token.NewToken(token.STAR, lexer.char)
+	case '/':
+		tok = token.NewToken(token.SLASH, lexer.char)
+	case '<':
+		tok = token.NewToken(token.LESS, lexer.char)
+	case '>':
+		tok = token.NewToken(token.GREATER, lexer.char)
 	case ',':
 		tok = token.NewToken(token.COMMA, lexer.char)
 	case ';':
@@ -75,10 +91,21 @@ func (lexer *Lexer) NextToken() token.Token {
 	return tok
 }
 
-func (lexer *Lexer) skipWhitespace() {
-	for lexer.char == ' ' || lexer.char == '\t' || lexer.char == '\n' || lexer.char == '\r' {
-		lexer.readChar()
+func (lexer *Lexer) readChar() {
+	if lexer.readPosition >= len(lexer.input) {
+		lexer.char = 0 //ASCII null
+	} else {
+		lexer.char = lexer.input[lexer.readPosition]
 	}
+	lexer.position = lexer.readPosition
+	lexer.readPosition++
+}
+
+func (lexer *Lexer) peekChar() byte {
+	if lexer.readPosition >= len(lexer.input) {
+		return 0
+	}
+	return lexer.input[lexer.readPosition]
 }
 
 func (lexer *Lexer) readIdentifier() string {
@@ -95,6 +122,12 @@ func (lexer *Lexer) readNumber() string {
 		lexer.readChar()
 	}
 	return lexer.input[startPosition:lexer.position]
+}
+
+func (lexer *Lexer) skipWhitespace() {
+	for lexer.char == ' ' || lexer.char == '\t' || lexer.char == '\n' || lexer.char == '\r' {
+		lexer.readChar()
+	}
 }
 
 func isLetter(char byte) bool {
