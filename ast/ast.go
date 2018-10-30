@@ -32,7 +32,7 @@ func (program *Program) TokenLiteral() string {
 	return ""
 }
 
-// LetStatement struct
+// LetStatement struct - implements the statementNode
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
@@ -52,3 +52,13 @@ type Identifier struct {
 // TokenLiteral implementation for the Identifier
 func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Literal }
 func (identifier *Identifier) expressionNode()      {}
+
+// ReturnStatement struct - implements the statementNode
+type ReturnStatement struct {
+	Token       token.Token
+	ReturnValue Expression
+}
+
+// TokenLiteral implementation for Return Statements
+func (returnStatement *ReturnStatement) TokenLiteral() string { return returnStatement.Token.Literal }
+func (returnStatement *ReturnStatement) statementNode()       {}

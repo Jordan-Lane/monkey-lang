@@ -86,7 +86,14 @@ func (parser *Parser) parseLetStatement() ast.Statement {
 }
 
 func (parser *Parser) parseReturnStatement() ast.Statement {
-	return nil
+	statement := &ast.ReturnStatement{Token: parser.currToken}
+
+	// TODO: Currently skipping over the expression
+	for !parser.isCurrTokenType(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
 }
 
 func (parser *Parser) parseIfStatement() ast.Statement {
