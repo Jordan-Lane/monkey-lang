@@ -115,17 +115,17 @@ func TestNextToken(t *testing.T) {
 
 	lexer := New(input)
 
-	for i, testToken := range tests {
+	for i, test := range tests {
 		currentToken := lexer.NextToken()
 
-		if currentToken.Type != testToken.expectedType {
+		if currentToken.Type != test.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected: %q, got: %q",
-				i, testToken.expectedType, currentToken.Type)
+				i, test.expectedType, currentToken.Type)
 		}
 
-		if currentToken.Literal != testToken.expectedLiteral {
+		if currentToken.Literal != test.expectedLiteral {
 			t.Fatalf("tests[%d] - literal wrong. expected: %q, got: %q",
-				i, testToken.expectedLiteral, currentToken.Literal)
+				i, test.expectedLiteral, currentToken.Literal)
 		}
 	}
 
