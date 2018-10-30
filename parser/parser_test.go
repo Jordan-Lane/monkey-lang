@@ -45,20 +45,20 @@ func testLetStatement(t *testing.T, statement ast.Statement, name string) bool {
 		return false
 	}
 
-	//What does this line specifically do ???
+	//This line asserts that the statement is a LetStatement (https://tour.golang.org/methods/15)
 	letStatement, ok := statement.(*ast.LetStatement)
 	if !ok {
-		t.Errorf("statement is not *ast.statement. got: %T", statement)
+		t.Errorf("statement is not *ast.LetStatement. got: %T", statement)
 		return false
 	}
 
 	if letStatement.Name.Value != name {
-		t.Errorf("let statement name not: %s . got: %s", letStatement.Name.Value, name)
+		t.Errorf("let statement name not: %s. got: %s", name, letStatement.Name.Value)
 		return false
 	}
 
 	if letStatement.Name.TokenLiteral() != name {
-		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s", letStatement.Name.TokenLiteral(), name)
+		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s", name, letStatement.Name.TokenLiteral())
 		return false
 	}
 

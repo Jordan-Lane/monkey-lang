@@ -2,29 +2,29 @@ package ast
 
 import "monkeylang/token"
 
-// Node ...
+// Node base interface
 type Node interface {
 	TokenLiteral() string
 }
 
-// Statement ...
+// Statement node interface
 type Statement interface {
 	Node
 	statementNode()
 }
 
-// Expression ...
+// Expression node interface
 type Expression interface {
 	Node
 	expressionNode()
 }
 
-// Program - The root node of the AST
+// Program Node - The root node of the AST
 type Program struct {
 	Statements []Statement
 }
 
-// TokenLiteral ...
+// TokenLiteral implementation for the Program Node
 func (program *Program) TokenLiteral() string {
 	if len(program.Statements) > 0 {
 		return program.Statements[0].TokenLiteral()
@@ -32,23 +32,23 @@ func (program *Program) TokenLiteral() string {
 	return ""
 }
 
-// LetStatement - Struct consisting of the individual elements of a let statement
+// LetStatement struct
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
 	Value Expression
 }
 
-// TokenLiteral - Returns the token literal for a let statement
+// TokenLiteral implementation for Let Statements
 func (letStatement *LetStatement) TokenLiteral() string { return letStatement.Token.Literal }
 func (letStatement *LetStatement) statementNode()       {}
 
-// Identifier ...
+// Identifier struct
 type Identifier struct {
 	Token token.Token
 	Value string
 }
 
-// TokenLiteral - Returns the toke
+// TokenLiteral implementation for the Identifier
 func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Literal }
 func (identifier *Identifier) expressionNode()      {}
