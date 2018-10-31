@@ -162,15 +162,15 @@ func (identifier *Identifier) expressionNode()      {}
 func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Literal }
 func (identifier *Identifier) String() string       { return identifier.Value }
 
-// BoolLiteral struct - implements Expression interface
-type BoolLiteral struct {
+// BooleanLiteral struct - implements Expression interface
+type BooleanLiteral struct {
 	Token token.Token
 	Value bool
 }
 
-func (boolLiteral *BoolLiteral) expressionNode()      {}
-func (boolLiteral *BoolLiteral) TokenLiteral() string { return boolLiteral.Token.Literal }
-func (boolLiteral *BoolLiteral) String() string       { return boolLiteral.Token.Literal }
+func (booleanLiteral *BooleanLiteral) expressionNode()      {}
+func (booleanLiteral *BooleanLiteral) TokenLiteral() string { return booleanLiteral.Token.Literal }
+func (booleanLiteral *BooleanLiteral) String() string       { return booleanLiteral.Token.Literal }
 
 // IntegerLiteral stuct - implements Expression interface
 type IntegerLiteral struct {

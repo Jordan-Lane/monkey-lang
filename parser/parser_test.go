@@ -149,7 +149,7 @@ func TestIdentifierExpression(t *testing.T) {
 
 	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", statement)
 	}
 
 	ident, ok := statement.Expression.(*ast.Identifier)
@@ -183,7 +183,7 @@ func TestIntegerLiteralExpression(t *testing.T) {
 
 	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", statement)
 	}
 
 	literal, ok := statement.Expression.(*ast.IntegerLiteral)
@@ -199,6 +199,41 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	if literal.TokenLiteral() != expectedLiteral {
 		t.Errorf("integer.TokenLiteral is incorrect. Expected: %q. Got %q", expectedLiteral, literal.TokenLiteral())
 	}
+}
+
+func TestBooleanExpression(t *testing.T) {
+	input := "true"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instaed of 1", len(program.Statements))
+	}
+
+	expression, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got %T", program.Statements[0])
+	}
+
+	booleanLiteral, ok := expression.Expression.(*ast.BooleanLiteral)
+	if !ok {
+		t.Fatalf("Statement.Expression type is incorrect. Expected: *ast.BooleanLiteral. Got %T", expression.Expression)
+	}
+
+	expectedLiteral := "true"
+	if booleanLiteral.TokenLiteral() != expectedLiteral {
+		t.Errorf("BooleanLiteral.TokenLiteral is incorrect. Expected: %q. Got %q", expectedLiteral, booleanLiteral.TokenLiteral())
+	}
+
+	expectedBool, _ := strconv.ParseBool(input)
+	if booleanLiteral.Value != expectedBool {
+		t.Errorf("BooleanLiteral.Value is incorrect. Expected: %t. Got: %t", expectedBool, booleanLiteral.Value)
+	}
+
 }
 
 func TestParsingPrefixExpressions(t *testing.T) {
