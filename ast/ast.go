@@ -23,7 +23,7 @@ type Expression interface {
 	expressionNode()
 }
 
-// Program Node - The root node of the AST
+// Program Node - Implements the Node Interface. It is the AST root node
 type Program struct {
 	Statements []Statement
 }
@@ -46,7 +46,7 @@ func (program *Program) String() string {
 	return out.String()
 }
 
-// LetStatement struct - implements statementNode
+// LetStatement struct - implements Statement Interface
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
@@ -87,7 +87,7 @@ func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Li
 func (identifier *Identifier) expressionNode()      {}
 func (identifier *Identifier) String() string       { return identifier.Value }
 
-// ReturnStatement struct - implements statementNode
+// ReturnStatement struct - implements Statement Interface
 type ReturnStatement struct {
 	Token       token.Token
 	ReturnValue Expression
@@ -114,7 +114,7 @@ func (returnStatement *ReturnStatement) String() string {
 	return out.String()
 }
 
-// ExpressionStatement struct - implements statementNode
+// ExpressionStatement struct - implements Statement Interface
 type ExpressionStatement struct {
 	Token      token.Token
 	Expression Expression
@@ -124,6 +124,7 @@ type ExpressionStatement struct {
 func (expressionStatement *ExpressionStatement) TokenLiteral() string {
 	return expressionStatement.Token.Literal
 }
+
 func (expressionStatement *ExpressionStatement) statementNode() {}
 
 func (expressionStatement *ExpressionStatement) String() string {
@@ -133,4 +134,40 @@ func (expressionStatement *ExpressionStatement) String() string {
 		return expressionStatement.Expression.String()
 	}
 	return ""
+}
+
+// IntegerLiteral stuct - implements Expression interface
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+// TokenLiteral implementation for IntegerLiteral
+func (integerLiteral *IntegerLiteral) TokenLiteral() string { return integerLiteral.Token.Literal }
+
+func (integerLiteral *IntegerLiteral) expressionNode() {}
+
+func (integerLiteral *IntegerLiteral) String() string { return integerLiteral.Token.Literal }
+
+// PrefixExpression struct implements Expression interface
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+// TokenLiteral implementation for PrefixExpression
+func (prefixExpression *PrefixExpression) TokenLiteral() string { return prefixExpression.Token.Literal }
+
+func (prefixExpression *PrefixExpression) expressionNode() {}
+
+func (prefixExpression *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(prefixExpression.Operator)
+	out.WriteString(prefixExpression.Right.String())
+	out.WriteString(")")
+
+	return out.String()
 }

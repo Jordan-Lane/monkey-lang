@@ -5,16 +5,36 @@ import (
 	"monkeylang/ast"
 	"monkeylang/lexer"
 	"monkeylang/token"
+	"strconv"
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      //==
+	LESSGREATER // < or >
+	SUM         // + or -
+	PRODUCT     // * or /
+	PREFIX      // -x or !x
+	CALL        // func(x + y)
+)
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
 )
 
 // Parser ...
 type Parser struct {
-	lexer *lexer.Lexer
+	lexer  *lexer.Lexer
+	errors []string
 
 	currToken token.Token
 	peekToken token.Token
 
-	errors []string
+	// Maps that associated a token to a parsing function
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 // New - Creates new parser pointer
@@ -25,12 +45,27 @@ func New(l *lexer.Lexer) *Parser {
 	parser.nextToken()
 	parser.nextToken()
 
+	parser.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	parser.registerPrefix(token.IDENT, parser.parseIdentifier)
+	parser.registerPrefix(token.INT, parser.parseIntegerLiteral)
+	parser.registerPrefix(token.BANG, parser.parsePrefixExpression)
+	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
+
 	return parser
 }
 
-// Errors - get all parser errors
-func (parser *Parser) Errors() []string {
-	return parser.errors
+func (parser *Parser) nextToken() {
+	parser.currToken = parser.peekToken
+	parser.peekToken = parser.lexer.NextToken()
+	return
+}
+
+func (parser *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	parser.prefixParseFns[tokenType] = fn
+}
+
+func (parser *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	parser.infixParseFns[tokenType] = fn
 }
 
 // ParseProgram - Parse the tokens into a collection of statements
@@ -55,10 +90,8 @@ func (parser *Parser) parseStatement() ast.Statement {
 		return parser.parseLetStatement()
 	case token.RETURN:
 		return parser.parseReturnStatement()
-	case token.IF:
-		return parser.parseIfStatement()
 	default:
-		return nil
+		return parser.parseExpressionStatement()
 	}
 }
 
@@ -96,14 +129,65 @@ func (parser *Parser) parseReturnStatement() ast.Statement {
 	return statement
 }
 
-func (parser *Parser) parseIfStatement() ast.Statement {
-	return nil
+func (parser *Parser) parseExpressionStatement() ast.Statement {
+	statement := &ast.ExpressionStatement{Token: parser.currToken}
+
+	statement.Expression = parser.parseExpression(LOWEST)
+
+	if parser.isPeekTokenType(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
 }
 
-func (parser *Parser) nextToken() {
-	parser.currToken = parser.peekToken
-	parser.peekToken = parser.lexer.NextToken()
-	return
+func (parser *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := parser.prefixParseFns[parser.currToken.Type]
+
+	if prefix == nil {
+		parser.noPrefixParseFnError(parser.currToken.Type)
+		return nil
+	}
+
+	return prefix()
+}
+
+func (parser *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
+}
+
+func (parser *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{Token: parser.currToken}
+
+	value, err := strconv.ParseInt(parser.currToken.Literal, 0, 64)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Could not parse %q as an integer", literal.Value)
+		parser.errors = append(parser.errors, errorMsg)
+		return nil
+	}
+
+	literal.Value = value
+	return literal
+}
+
+func (parser *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{
+		Token:    parser.currToken,
+		Operator: parser.currToken.Literal,
+	}
+
+	parser.nextToken()
+	expression.Right = parser.parseExpression(PREFIX)
+
+	return expression
+}
+
+func (parser *Parser) isCurrTokenType(expectedTokenType token.TokenType) bool {
+	return parser.currToken.Type == expectedTokenType
+}
+
+func (parser *Parser) isPeekTokenType(expectedTokenType token.TokenType) bool {
+	return parser.peekToken.Type == expectedTokenType
 }
 
 func (parser *Parser) expectPeek(expectedTokenType token.TokenType) bool {
@@ -114,16 +198,18 @@ func (parser *Parser) expectPeek(expectedTokenType token.TokenType) bool {
 	return false
 }
 
+// Errors - get all parser errors
+func (parser *Parser) Errors() []string {
+	return parser.errors
+}
 func (parser *Parser) peekError(expectedTokenType token.TokenType) {
 	errorMsg := fmt.Sprintf("Expected token type %s, got %s instead", expectedTokenType, parser.peekToken.Type)
 	parser.errors = append(parser.errors, errorMsg)
 	return
 }
 
-func (parser *Parser) isCurrTokenType(expectedTokenType token.TokenType) bool {
-	return parser.currToken.Type == expectedTokenType
-}
-
-func (parser *Parser) isPeekTokenType(expectedTokenType token.TokenType) bool {
-	return parser.peekToken.Type == expectedTokenType
+func (parser *Parser) noPrefixParseFnError(tokenType token.TokenType) {
+	msg := fmt.Sprintf("No prefix parse function found for tokentype: %s", tokenType)
+	parser.errors = append(parser.errors, msg)
+	return
 }

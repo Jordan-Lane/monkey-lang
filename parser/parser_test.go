@@ -1,8 +1,10 @@
 package parser
 
 import (
+	"fmt"
 	"monkeylang/ast"
 	"monkeylang/lexer"
+	"strconv"
 	"testing"
 )
 
@@ -126,4 +128,135 @@ func checkParseErrors(t *testing.T, parser *Parser) {
 		t.Errorf("Parser Error: %s", errorMsg)
 	}
 	t.FailNow()
+}
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+	}
+
+	ident, ok := statement.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("Statement.Expression is incorrect. Expected: *ast.Identifier. Got %T", statement.Expression)
+	}
+	expectedIdent := "foobar"
+	if ident.Value != expectedIdent {
+		t.Errorf("ident.Value is incorrect. Expected: %q. Got %q", expectedIdent, ident)
+	}
+	if ident.TokenLiteral() != expectedIdent {
+		t.Errorf("ident.TokenLiteral is incorrect. Expected: %q. Got %q", expectedIdent, ident.TokenLiteral())
+	}
+}
+
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "5;"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+	}
+
+	literal, ok := statement.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("Statement.Expression is incorrect. Expected: *ast.IntegerLiteral. Got %T", statement.Expression)
+	}
+
+	expectedLiteral := "5"
+	expectedInt, _ := strconv.ParseInt(expectedLiteral, 0, 64)
+	if literal.Value != expectedInt {
+		t.Errorf("integer.Value is incorrect. Expected: %d. Got %q", expectedInt, literal)
+	}
+	if literal.TokenLiteral() != expectedLiteral {
+		t.Errorf("integer.TokenLiteral is incorrect. Expected: %q. Got %q", expectedLiteral, literal.TokenLiteral())
+	}
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	prefixTests := []struct {
+		input        string
+		operator     string
+		integerValue int64
+	}{
+		{"!5", "!", 5},
+		{"-10", "-", 10},
+	}
+
+	for _, test := range prefixTests {
+		lexer := lexer.New(test.input)
+		parser := New(lexer)
+
+		program := parser.ParseProgram()
+		checkParseErrors(t, parser)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+		}
+
+		statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+		}
+
+		expression, ok := statement.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("Statement.Expression is incorrect. Expected: *ast.PrefixExpression. Got %T", statement.Expression)
+		}
+		if expression.Operator != test.operator {
+			t.Fatalf("Operator is incorrect. Expected: %s. Got %s", test.operator, expression.Operator)
+		}
+		if !testIntegerLiteral(t, expression.Right, test.integerValue) {
+			t.Fatalf("Integer value is incorrect. Expected: %d. Got %d", test.integerValue, expression.Right)
+		}
+
+	}
+}
+
+func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, expectedValue int64) bool {
+	integer, ok := integerLiteral.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("IntegerLiteral is incorrect. Expected: *ast.IntegerLiteral. Got: %T", integer)
+		return false
+	}
+
+	if integer.Value != expectedValue {
+		t.Fatalf("IntegerLiteral.Value is incorrect. Expected: %d. Got: %d", expectedValue, integer.Value)
+		return false
+	}
+
+	expectedToken := fmt.Sprintf("%d", expectedValue)
+	if integer.TokenLiteral() != expectedToken {
+		t.Fatalf("IntegerLiteral.TokenLiteral is incorrect. Expected %s. Got %s", expectedToken, integer.TokenLiteral())
+		return false
+	}
+
+	return true
 }
