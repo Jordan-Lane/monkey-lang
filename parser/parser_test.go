@@ -238,12 +238,14 @@ func TestBooleanExpression(t *testing.T) {
 
 func TestParsingPrefixExpressions(t *testing.T) {
 	prefixTests := []struct {
-		input        string
-		operator     string
-		integerValue int64
+		input    string
+		operator string
+		value    interface{}
 	}{
 		{"!5", "!", 5},
 		{"-10", "-", 10},
+		{"!true", "!", true},
+		{"!false", "!", false},
 	}
 
 	for _, test := range prefixTests {
@@ -269,19 +271,19 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		if expression.Operator != test.operator {
 			t.Fatalf("Operator is incorrect. Expected: %s. Got %s", test.operator, expression.Operator)
 		}
-		if !testIntegerLiteral(t, expression.Right, test.integerValue) {
-			t.Fatalf("Integer value is incorrect. Expected: %d. Got %d", test.integerValue, expression.Right)
-		}
 
+		if !testLiteralExpression(t, expression.Right, test.value) {
+			t.Fatalf("Integer value is incorrect. Expected: %d. Got %d", test.value, expression.Right)
+		}
 	}
 }
 
 func TestParsingInfixExpressions(t *testing.T) {
 	infixTests := []struct {
 		input      string
-		leftValue  int64
+		leftValue  interface{}
 		operator   string
-		rightValue int64
+		rightValue interface{}
 	}{
 		{"5 + 5;", 5, "+", 5},
 		{"5 - 5;", 5, "-", 5},
@@ -291,6 +293,10 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"5 < 5;", 5, "<", 5},
 		{"5 == 5;", 5, "==", 5},
 		{"5 != 5;", 5, "!=", 5},
+		{"true == true", true, "==", true},
+		{"false == false", false, "==", false},
+		{"true != false", true, "!=", false},
+		{"false != true", false, "!=", true},
 	}
 
 	for _, test := range infixTests {
@@ -366,6 +372,22 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"3 + 4 * 5 == 3 * 1 + 4 * 5;",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
 		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
 	}
 
 	for _, test := range tests {
@@ -378,7 +400,24 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			t.Errorf("expected=%q, got=%q", test.expected, actual)
 		}
 	}
+}
 
+func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
+
+	// This is a type switch (https://tour.golang.org/methods/16)
+	switch value := expected.(type) {
+	case int:
+		return testIntegerLiteral(t, expression, int64(value))
+	case int64:
+		return testIntegerLiteral(t, expression, value)
+	case string:
+		return testIdentifier(t, expression, value)
+	case bool:
+		return testBooleanLiteral(t, expression, value)
+	}
+
+	t.Errorf("Expression literal not supported: %T", expression)
+	return false
 }
 
 func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, expectedValue int64) bool {
@@ -422,20 +461,26 @@ func testIdentifier(t *testing.T, identifierLiteral ast.Expression, expectedValu
 	return true
 }
 
-func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
-
-	// This is a type switch (https://tour.golang.org/methods/16)
-	switch value := expected.(type) {
-	case int:
-		return testIntegerLiteral(t, expression, int64(value))
-	case int64:
-		return testIntegerLiteral(t, expression, value)
-	case string:
-		return testIdentifier(t, expression, value)
+func testBooleanLiteral(t *testing.T, booleanLiteral ast.Expression, expectedValue bool) bool {
+	boolean, ok := booleanLiteral.(*ast.BooleanLiteral)
+	if !ok {
+		t.Fatalf("BooleanLiteral type is incorrect. Expected: *ast.BoolenLiteral. Got: %T", boolean)
+		return false
 	}
 
-	t.Errorf("Expression literal not supported: %T", expression)
-	return false
+	if boolean.Value != expectedValue {
+		t.Fatalf("BooleanLiteral.Value is incorrect. Expected: %t. Got: %t", expectedValue, boolean.Value)
+		return false
+	}
+
+	// Book does this slightly differently, however it should still work
+	boolToken, _ := strconv.ParseBool(boolean.TokenLiteral())
+	if boolToken != expectedValue {
+		t.Fatalf("BooleanLiteral.TokenLiteral() is incorrect. Expected: %t. Got: %t", expectedValue, boolToken)
+		return false
+	}
+
+	return true
 }
 
 func testInfixExpression(t *testing.T, expression ast.Expression, left interface{}, operator string, right interface{}) bool {
