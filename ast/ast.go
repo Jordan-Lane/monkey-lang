@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"monkeylang/token"
+	"strings"
 )
 
 // Node base interface
@@ -190,6 +191,32 @@ func (returnStatement *ReturnStatement) String() string {
 	}
 
 	out.WriteString(";")
+	return out.String()
+}
+
+// FunctionLiteral struct - implements the Expression Interface
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+func (funcLiteral *FunctionLiteral) expressionNode()      {}
+func (funcLiteral *FunctionLiteral) TokenLiteral() string { return funcLiteral.Token.Literal }
+func (funcLiteral *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, parameter := range funcLiteral.Parameters {
+		params = append(params, parameter.String())
+	}
+
+	out.WriteString(funcLiteral.TokenLiteral())
+	out.WriteString("( ")
+	out.WriteString(strings.Join(params, ","))
+	out.WriteString(") ")
+	out.WriteString(funcLiteral.Body.String())
+
 	return out.String()
 }
 

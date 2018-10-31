@@ -529,6 +529,83 @@ func TestIfElseExpression(t *testing.T) {
 	}
 }
 
+func TestFunctionLiteral(t *testing.T) {
+	input := "fn( x, y ){ x + y; }"
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("Statement.Expression type is incorrect. Expected: *ast.FunctionLitearl. Got: %T", statement)
+	}
+
+	if len(expression.Parameters) != 2 {
+		t.Fatalf("Number of parameters is incorrect. Expected: 2. Got: %d", len(expression.Parameters))
+	}
+
+	if !testLiteralExpression(t, expression.Parameters[0], "x") {
+		return
+	}
+	if !testLiteralExpression(t, expression.Parameters[1], "y") {
+		return
+	}
+
+	if len(expression.Body.Statements) != 1 {
+		t.Fatalf("Expression.Body number of statements is incorrect. Expected: 1. Got: %d", len(expression.Body.Statements))
+	}
+
+	bodyStatement, ok := expression.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Body.Statement[0] type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", expression.Body.Statements[0])
+	}
+
+	if !testInfixExpression(t, bodyStatement.Expression, "x", "+", "y") {
+		return
+	}
+}
+
+func TestFunctionParameters(t *testing.T) {
+	tests := []struct {
+		input              string
+		expectedParameters []string
+	}{
+		{input: "fn(){};", expectedParameters: []string{}},
+		{input: "fn(x){};", expectedParameters: []string{"x"}},
+		{input: "fn(x, y){};", expectedParameters: []string{"x", "y"}},
+	}
+
+	for _, test := range tests {
+		lexer := lexer.New(test.input)
+		parser := New(lexer)
+
+		program := parser.ParseProgram()
+		checkParseErrors(t, parser)
+
+		statement := program.Statements[0].(*ast.ExpressionStatement)
+		function := statement.Expression.(*ast.FunctionLiteral)
+
+		if len(function.Parameters) != len(test.expectedParameters) {
+			t.Fatalf("Number of parameters is incorrect. Expected: %d. Got %d", len(test.expectedParameters), len(function.Parameters))
+		}
+
+		for i, ident := range test.expectedParameters {
+			testLiteralExpression(t, function.Parameters[i], ident)
+		}
+	}
+}
+
 func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
 
 	// This is a type switch (https://tour.golang.org/methods/16)
