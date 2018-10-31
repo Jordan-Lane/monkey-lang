@@ -149,7 +149,7 @@ func (integerLiteral *IntegerLiteral) expressionNode() {}
 
 func (integerLiteral *IntegerLiteral) String() string { return integerLiteral.Token.Literal }
 
-// PrefixExpression struct implements Expression interface
+// PrefixExpression struct - implements Expression interface
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string
@@ -167,6 +167,31 @@ func (prefixExpression *PrefixExpression) String() string {
 	out.WriteString("(")
 	out.WriteString(prefixExpression.Operator)
 	out.WriteString(prefixExpression.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+// InfixExpression struct - implements Exprssion Interface
+type InfixExpression struct {
+	Token    token.Token
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+// TokenLiteral implementation for InfixExpression
+func (infixExpression *InfixExpression) TokenLiteral() string { return infixExpression.Token.Literal }
+
+func (infixExpression *InfixExpression) expressionNode() {}
+
+func (infixExpression *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(infixExpression.Right.String())
+	out.WriteString(" " + infixExpression.Operator + " ")
+	out.WriteString(infixExpression.Left.String())
 	out.WriteString(")")
 
 	return out.String()
