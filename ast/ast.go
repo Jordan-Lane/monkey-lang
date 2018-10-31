@@ -28,14 +28,12 @@ type Program struct {
 	Statements []Statement
 }
 
-// TokenLiteral implementation for the Program Node
 func (program *Program) TokenLiteral() string {
 	if len(program.Statements) > 0 {
 		return program.Statements[0].TokenLiteral()
 	}
 	return ""
 }
-
 func (program *Program) String() string {
 	var out bytes.Buffer
 
@@ -53,12 +51,8 @@ type LetStatement struct {
 	Value Expression
 }
 
-func (letStatement *LetStatement) statementNode() {}
-
-// TokenLiteral implementation for the LetStatement struct
+func (letStatement *LetStatement) statementNode()       {}
 func (letStatement *LetStatement) TokenLiteral() string { return letStatement.Token.Literal }
-
-// String implementation for the LetStatement struct
 func (letStatement *LetStatement) String() string {
 	var out bytes.Buffer
 
@@ -72,20 +66,8 @@ func (letStatement *LetStatement) String() string {
 	}
 
 	out.WriteString(";")
-
 	return out.String()
 }
-
-// Identifier struct
-type Identifier struct {
-	Token token.Token
-	Value string
-}
-
-// TokenLiteral implementation for the Identifier
-func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Literal }
-func (identifier *Identifier) expressionNode()      {}
-func (identifier *Identifier) String() string       { return identifier.Value }
 
 // ReturnStatement struct - implements Statement Interface
 type ReturnStatement struct {
@@ -93,12 +75,8 @@ type ReturnStatement struct {
 	ReturnValue Expression
 }
 
-func (returnStatement *ReturnStatement) statementNode() {}
-
-// TokenLiteral implementation for the ReturnStatement struct
+func (returnStatement *ReturnStatement) statementNode()       {}
 func (returnStatement *ReturnStatement) TokenLiteral() string { return returnStatement.Token.Literal }
-
-// String implementation for the ReturnStatement struct
 func (returnStatement *ReturnStatement) String() string {
 	var out bytes.Buffer
 
@@ -110,7 +88,6 @@ func (returnStatement *ReturnStatement) String() string {
 	}
 
 	out.WriteString(";")
-
 	return out.String()
 }
 
@@ -120,13 +97,10 @@ type ExpressionStatement struct {
 	Expression Expression
 }
 
-// TokenLiteral implementation for ExpressionStatement
+func (expressionStatement *ExpressionStatement) statementNode() {}
 func (expressionStatement *ExpressionStatement) TokenLiteral() string {
 	return expressionStatement.Token.Literal
 }
-
-func (expressionStatement *ExpressionStatement) statementNode() {}
-
 func (expressionStatement *ExpressionStatement) String() string {
 
 	// TODO: Remove nil check once expressions are implemented in parser
@@ -136,19 +110,6 @@ func (expressionStatement *ExpressionStatement) String() string {
 	return ""
 }
 
-// IntegerLiteral stuct - implements Expression interface
-type IntegerLiteral struct {
-	Token token.Token
-	Value int64
-}
-
-// TokenLiteral implementation for IntegerLiteral
-func (integerLiteral *IntegerLiteral) TokenLiteral() string { return integerLiteral.Token.Literal }
-
-func (integerLiteral *IntegerLiteral) expressionNode() {}
-
-func (integerLiteral *IntegerLiteral) String() string { return integerLiteral.Token.Literal }
-
 // PrefixExpression struct - implements Expression interface
 type PrefixExpression struct {
 	Token    token.Token
@@ -156,11 +117,8 @@ type PrefixExpression struct {
 	Right    Expression
 }
 
-// TokenLiteral implementation for PrefixExpression
+func (prefixExpression *PrefixExpression) expressionNode()      {}
 func (prefixExpression *PrefixExpression) TokenLiteral() string { return prefixExpression.Token.Literal }
-
-func (prefixExpression *PrefixExpression) expressionNode() {}
-
 func (prefixExpression *PrefixExpression) String() string {
 	var out bytes.Buffer
 
@@ -180,11 +138,8 @@ type InfixExpression struct {
 	Right    Expression
 }
 
-// TokenLiteral implementation for InfixExpression
+func (infixExpression *InfixExpression) expressionNode()      {}
 func (infixExpression *InfixExpression) TokenLiteral() string { return infixExpression.Token.Literal }
-
-func (infixExpression *InfixExpression) expressionNode() {}
-
 func (infixExpression *InfixExpression) String() string {
 	var out bytes.Buffer
 
@@ -196,3 +151,33 @@ func (infixExpression *InfixExpression) String() string {
 
 	return out.String()
 }
+
+// Identifier struct
+type Identifier struct {
+	Token token.Token
+	Value string
+}
+
+func (identifier *Identifier) expressionNode()      {}
+func (identifier *Identifier) TokenLiteral() string { return identifier.Token.Literal }
+func (identifier *Identifier) String() string       { return identifier.Value }
+
+// BoolLiteral struct - implements Expression interface
+type BoolLiteral struct {
+	Token token.Token
+	Value bool
+}
+
+func (boolLiteral *BoolLiteral) expressionNode()      {}
+func (boolLiteral *BoolLiteral) TokenLiteral() string { return boolLiteral.Token.Literal }
+func (boolLiteral *BoolLiteral) String() string       { return boolLiteral.Token.Literal }
+
+// IntegerLiteral stuct - implements Expression interface
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (integerLiteral *IntegerLiteral) expressionNode()      {}
+func (integerLiteral *IntegerLiteral) TokenLiteral() string { return integerLiteral.Token.Literal }
+func (integerLiteral *IntegerLiteral) String() string       { return integerLiteral.Token.Literal }
