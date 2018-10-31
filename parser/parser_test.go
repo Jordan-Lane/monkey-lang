@@ -52,7 +52,7 @@ func testLetStatement(t *testing.T, statement ast.Statement, name string) bool {
 	//This line asserts that the statement is a LetStatement (https://tour.golang.org/methods/15)
 	letStatement, ok := statement.(*ast.LetStatement)
 	if !ok {
-		t.Errorf("Statement is not *ast.LetStatement. Got: %T", statement)
+		t.Errorf("Statement type is incorrect. Expected: *ast.LetStatement. Got: %T", statement)
 		return false
 	}
 
@@ -99,15 +99,16 @@ func TestReturnStatements(t *testing.T) {
 
 func testReturnStatement(t *testing.T, statement ast.Statement) bool {
 	// Check that the statement token is a return
-	if statement.TokenLiteral() != "return" {
-		t.Errorf("Statement.TokenLiteral not return. Got %q", statement.TokenLiteral())
+	expected := "return"
+	if statement.TokenLiteral() != expected {
+		t.Errorf("Statement.TokenLiteral is incorrect. Expected: %q. Got %q", expected, statement.TokenLiteral())
 		return false
 	}
 
 	// Assert that the statement is a return statement
 	_, ok := statement.(*ast.ReturnStatement)
 	if !ok {
-		t.Errorf("Statement is not *ast.ReturnStatement. Got %T", statement)
+		t.Errorf("Statement type is incorrect. Expected: *ast.ReturnStatement. Got %T", statement)
 		return false
 	}
 
@@ -148,7 +149,7 @@ func TestIdentifierExpression(t *testing.T) {
 
 	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+		t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
 	}
 
 	ident, ok := statement.Expression.(*ast.Identifier)
@@ -182,7 +183,7 @@ func TestIntegerLiteralExpression(t *testing.T) {
 
 	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+		t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
 	}
 
 	literal, ok := statement.Expression.(*ast.IntegerLiteral)
@@ -223,7 +224,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 
 		statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+			t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
 		}
 
 		expression, ok := statement.Expression.(*ast.PrefixExpression)
@@ -238,27 +239,6 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		}
 
 	}
-}
-
-func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, expectedValue int64) bool {
-	integer, ok := integerLiteral.(*ast.IntegerLiteral)
-	if !ok {
-		t.Fatalf("IntegerLiteral is incorrect. Expected: *ast.IntegerLiteral. Got: %T", integer)
-		return false
-	}
-
-	if integer.Value != expectedValue {
-		t.Fatalf("IntegerLiteral.Value is incorrect. Expected: %d. Got: %d", expectedValue, integer.Value)
-		return false
-	}
-
-	expectedToken := fmt.Sprintf("%d", expectedValue)
-	if integer.TokenLiteral() != expectedToken {
-		t.Fatalf("IntegerLiteral.TokenLiteral is incorrect. Expected %s. Got %s", expectedToken, integer.TokenLiteral())
-		return false
-	}
-
-	return true
 }
 
 func TestParsingInfixExpressions(t *testing.T) {
@@ -291,23 +271,10 @@ func TestParsingInfixExpressions(t *testing.T) {
 
 		statement, ok := program.Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("Statement is incorrect. Expected: *ast.Expression. Got: %T", statement)
+			t.Fatalf("Statement type is incorrect. Expected: *ast.Expression. Got: %T", statement)
 		}
 
-		expression, ok := statement.Expression.(*ast.InfixExpression)
-		if !ok {
-			t.Fatalf("Statement.Expression is incorrect. Expected: *ask.InfixExpression. Got: %T", statement.Expression)
-		}
-
-		if !testIntegerLiteral(t, expression.Left, test.leftValue) {
-			return
-		}
-
-		if expression.Operator != test.operator {
-			t.Fatalf("Expression.Operator is incorrect. Expected: %q. Got: %q", test.operator, expression.Operator)
-		}
-
-		if !testIntegerLiteral(t, expression.Right, test.rightValue) {
+		if !testInfixExpression(t, statement.Expression, test.leftValue, test.operator, test.rightValue) {
 			return
 		}
 	}
@@ -377,4 +344,83 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		}
 	}
 
+}
+
+func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, expectedValue int64) bool {
+	integer, ok := integerLiteral.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("IntegerLiteral type is incorrect. Expected: *ast.IntegerLiteral. Got: %T", integer)
+		return false
+	}
+
+	if integer.Value != expectedValue {
+		t.Fatalf("IntegerLiteral.Value is incorrect. Expected: %d. Got: %d", expectedValue, integer.Value)
+		return false
+	}
+
+	expectedToken := fmt.Sprintf("%d", expectedValue)
+	if integer.TokenLiteral() != expectedToken {
+		t.Fatalf("IntegerLiteral.TokenLiteral is incorrect. Expected %q. Got %q", expectedToken, integer.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testIdentifier(t *testing.T, identifierLiteral ast.Expression, expectedValue string) bool {
+	identifier, ok := identifierLiteral.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("IdentifierLiteral type is incorrect. Expected *ast.identifer. Got: %T", identifier)
+		return false
+	}
+
+	if identifier.Value != expectedValue {
+		t.Fatalf("IdentifierLiteral.Value is incorrect. Expected: %q. Got %q", expectedValue, identifier.Value)
+		return false
+	}
+
+	if identifier.TokenLiteral() != expectedValue {
+		t.Fatalf("IdentifierLiteral.TokenLiteral is incorrect. Expceted: %q. Got: %q", expectedValue, identifier.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
+
+	// This is a type switch (https://tour.golang.org/methods/16)
+	switch value := expected.(type) {
+	case int:
+		return testIntegerLiteral(t, expression, int64(value))
+	case int64:
+		return testIntegerLiteral(t, expression, value)
+	case string:
+		return testIdentifier(t, expression, value)
+	}
+
+	t.Errorf("Expression literal not supported: %T", expression)
+	return false
+}
+
+func testInfixExpression(t *testing.T, expression ast.Expression, left interface{}, operator string, right interface{}) bool {
+	infix, ok := expression.(*ast.InfixExpression)
+	if !ok {
+		t.Fatalf("InfixExpression type is incorrect. Expected *ast.InfixExpression. Got: %q", expression)
+		return false
+	}
+
+	if !testLiteralExpression(t, infix.Left, left) {
+		return false
+	}
+
+	if infix.Operator != operator {
+		t.Fatalf("InfixExpression.Operator is incorrect. Expected: %q. Got: %q", operator, infix.Operator)
+	}
+
+	if !testLiteralExpression(t, infix.Right, right) {
+		return false
+	}
+
+	return true
 }
