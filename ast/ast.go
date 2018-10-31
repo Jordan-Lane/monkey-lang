@@ -189,9 +189,9 @@ func (infixExpression *InfixExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(infixExpression.Right.String())
-	out.WriteString(" " + infixExpression.Operator + " ")
 	out.WriteString(infixExpression.Left.String())
+	out.WriteString(" " + infixExpression.Operator + " ")
+	out.WriteString(infixExpression.Right.String())
 	out.WriteString(")")
 
 	return out.String()
