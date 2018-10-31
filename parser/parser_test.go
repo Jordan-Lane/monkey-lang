@@ -388,6 +388,38 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"3 < 5 == true",
 			"((3 < 5) == true)",
 		},
+		{
+			"(1 + 2) + 3",
+			"((1 + 2) + 3)",
+		},
+		{
+			"1 + (2 + 3)",
+			"(1 + (2 + 3))",
+		},
+		{
+			"1 + (2 + 3)",
+			"(1 + (2 + 3))",
+		},
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
+		},
 	}
 
 	for _, test := range tests {
@@ -399,6 +431,101 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		if actual != test.expected {
 			t.Errorf("expected=%q, got=%q", test.expected, actual)
 		}
+	}
+}
+
+func TestIfExpression(t *testing.T) {
+	input := "if (x < y) { x; }"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("Statement.Expression type is incorrect. Expected: *ast.IfExpression. Got: %T", statement)
+	}
+
+	if !testInfixExpression(t, expression.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expression.Consequence.Statements) != 1 {
+		t.Fatalf("IfExpression.Consquence produced %d statements instead of 1", len(expression.Consequence.Statements))
+	}
+
+	consequence, ok := expression.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence.Statement[0] type is incorrect. Expected *ast.ExpressionStatement. Got %T", expression.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	if expression.Alternative != nil {
+		t.Errorf("IfExpression.Alternative is incorrect. Expected: nil. Got: %T", expression.Alternative)
+	}
+}
+
+func TestIfElseExpression(t *testing.T) {
+	input := "if (x < y) { x; } else { y; }"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", program.Statements[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("Statement.Expression type is incorrect. Expected: *ast.IfExpression. Got: %T", statement)
+	}
+
+	if !testInfixExpression(t, expression.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expression.Consequence.Statements) != 1 {
+		t.Fatalf("IfExpression.Consquence produced %d statements instead of 1", len(expression.Consequence.Statements))
+	}
+
+	consequence, ok := expression.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Consequence.Statement[0] type is incorrect. Expected *ast.ExpressionStatement. Got %T", expression.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	alternative, ok := expression.Alternative.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("IfExpression.Alternative type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", expression.Alternative)
+	}
+
+	if !testIdentifier(t, alternative.Expression, "y") {
+		return
 	}
 }
 

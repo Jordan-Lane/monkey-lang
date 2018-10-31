@@ -64,6 +64,8 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
 	parser.registerPrefix(token.TRUE, parser.parseBooleanLiteral)
 	parser.registerPrefix(token.FALSE, parser.parseBooleanLiteral)
+	parser.registerPrefix(token.LPAREN, parser.parseGroupedExpression)
+	parser.registerPrefix(token.IF, parser.parseIfExpression)
 
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
 	parser.registerInfix(token.PLUS, parser.parseInfixExpression)
@@ -119,41 +121,7 @@ func (parser *Parser) parseStatement() ast.Statement {
 	}
 }
 
-// Parsing Statements
-
-func (parser *Parser) parseLetStatement() ast.Statement {
-	statement := &ast.LetStatement{Token: parser.currToken}
-
-	if !parser.expectPeek(token.IDENT) {
-		parser.peekError(token.IDENT)
-		return nil
-	}
-
-	statement.Name = &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
-
-	if !parser.expectPeek(token.ASSIGN) {
-		parser.peekError(token.ASSIGN)
-		return nil
-	}
-
-	// TODO: Currently skipping over the expression
-	for !parser.isCurrTokenType(token.SEMICOLON) {
-		parser.nextToken()
-	}
-
-	return statement
-}
-
-func (parser *Parser) parseReturnStatement() ast.Statement {
-	statement := &ast.ReturnStatement{Token: parser.currToken}
-
-	// TODO: Currently skipping over the expression
-	for !parser.isCurrTokenType(token.SEMICOLON) {
-		parser.nextToken()
-	}
-
-	return statement
-}
+// Parsing General Statements
 
 func (parser *Parser) parseExpressionStatement() ast.Statement {
 	statement := &ast.ExpressionStatement{Token: parser.currToken}
@@ -165,6 +133,24 @@ func (parser *Parser) parseExpressionStatement() ast.Statement {
 	}
 
 	return statement
+}
+
+func (parser *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: parser.currToken}
+	block.Statements = []ast.Statement{}
+
+	parser.nextToken()
+
+	for !parser.isCurrTokenType(token.RBRACE) && !parser.isCurrTokenType(token.EOF) {
+		statement := parser.parseStatement()
+		if statement != nil {
+			block.Statements = append(block.Statements, statement)
+		}
+
+		parser.nextToken()
+	}
+
+	return block
 }
 
 // Main Parsing Function. Parsing an Expression based on the inputted precedence
@@ -216,6 +202,89 @@ func (parser *Parser) parseInfixExpression(leftExpression ast.Expression) ast.Ex
 	expression.Right = parser.parseExpression(precedence)
 
 	return expression
+}
+
+// Parsing Grouped Expression
+
+func (parser *Parser) parseGroupedExpression() ast.Expression {
+	parser.nextToken()
+
+	expression := parser.parseExpression(LOWEST)
+
+	if !parser.expectPeek(token.RPAREN) {
+		parser.peekError(token.RPAREN)
+		return nil
+	}
+
+	return expression
+}
+
+// Parsing Keywords
+
+func (parser *Parser) parseLetStatement() ast.Statement {
+	statement := &ast.LetStatement{Token: parser.currToken}
+
+	if !parser.expectPeek(token.IDENT) {
+		parser.peekError(token.IDENT)
+		return nil
+	}
+
+	statement.Name = &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
+
+	if !parser.expectPeek(token.ASSIGN) {
+		parser.peekError(token.ASSIGN)
+		return nil
+	}
+
+	// TODO: Currently skipping over the expression
+	for !parser.isCurrTokenType(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
+}
+
+func (parser *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: parser.currToken}
+
+	if !parser.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	parser.nextToken()
+	expression.Condition = parser.parseExpression(LOWEST)
+
+	if !parser.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !parser.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Consequence = parser.parseBlockStatement()
+
+	if parser.isPeekTokenType(token.ELSE) {
+		parser.nextToken()
+
+		if !parser.expectPeek(token.LBRACE) {
+			return nil
+		}
+		expression.Alternative = parser.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (parser *Parser) parseReturnStatement() ast.Statement {
+	statement := &ast.ReturnStatement{Token: parser.currToken}
+
+	// TODO: Currently skipping over the expression
+	for !parser.isCurrTokenType(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
 }
 
 // Parsing Literals

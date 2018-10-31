@@ -44,50 +44,20 @@ func (program *Program) String() string {
 	return out.String()
 }
 
-// LetStatement struct - implements Statement Interface
-type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Value Expression
+// BlockStatementStruct - implements Statement Interface
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
 }
 
-func (letStatement *LetStatement) statementNode()       {}
-func (letStatement *LetStatement) TokenLiteral() string { return letStatement.Token.Literal }
-func (letStatement *LetStatement) String() string {
+func (blockStatement *BlockStatement) statementNode()       {}
+func (blockStatement *BlockStatement) TokenLiteral() string { return blockStatement.Token.Literal }
+func (blockStatement *BlockStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(letStatement.TokenLiteral() + " ")
-	out.WriteString(letStatement.Name.String())
-	out.WriteString(" = ")
-
-	// TODO: Remove nil check once expressions are implemented in parser
-	if letStatement.Value != nil {
-		out.WriteString(letStatement.Value.String())
+	for _, statement := range blockStatement.Statements {
+		out.WriteString(statement.String())
 	}
-
-	out.WriteString(";")
-	return out.String()
-}
-
-// ReturnStatement struct - implements Statement Interface
-type ReturnStatement struct {
-	Token       token.Token
-	ReturnValue Expression
-}
-
-func (returnStatement *ReturnStatement) statementNode()       {}
-func (returnStatement *ReturnStatement) TokenLiteral() string { return returnStatement.Token.Literal }
-func (returnStatement *ReturnStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(returnStatement.TokenLiteral() + " ")
-
-	// TODO: Remove nil check once expressions are implemented in parser
-	if returnStatement.ReturnValue != nil {
-		out.WriteString(returnStatement.ReturnValue.String())
-	}
-
-	out.WriteString(";")
 	return out.String()
 }
 
@@ -149,6 +119,77 @@ func (infixExpression *InfixExpression) String() string {
 	out.WriteString(infixExpression.Right.String())
 	out.WriteString(")")
 
+	return out.String()
+}
+
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (ifExpression *IfExpression) expressionNode()      {}
+func (ifExpression *IfExpression) TokenLiteral() string { return ifExpression.Token.Literal }
+func (ifExpression *IfExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("if ")
+	out.WriteString(ifExpression.Condition.String())
+	out.WriteString(ifExpression.Consequence.String())
+
+	if ifExpression.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(ifExpression.Alternative.String())
+	}
+
+	return out.String()
+}
+
+// LetStatement struct - implements Statement Interface
+type LetStatement struct {
+	Token token.Token
+	Name  *Identifier
+	Value Expression
+}
+
+func (letStatement *LetStatement) statementNode()       {}
+func (letStatement *LetStatement) TokenLiteral() string { return letStatement.Token.Literal }
+func (letStatement *LetStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(letStatement.TokenLiteral() + " ")
+	out.WriteString(letStatement.Name.String())
+	out.WriteString(" = ")
+
+	// TODO: Remove nil check once expressions are implemented in parser
+	if letStatement.Value != nil {
+		out.WriteString(letStatement.Value.String())
+	}
+
+	out.WriteString(";")
+	return out.String()
+}
+
+// ReturnStatement struct - implements Statement Interface
+type ReturnStatement struct {
+	Token       token.Token
+	ReturnValue Expression
+}
+
+func (returnStatement *ReturnStatement) statementNode()       {}
+func (returnStatement *ReturnStatement) TokenLiteral() string { return returnStatement.Token.Literal }
+func (returnStatement *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(returnStatement.TokenLiteral() + " ")
+
+	// TODO: Remove nil check once expressions are implemented in parser
+	if returnStatement.ReturnValue != nil {
+		out.WriteString(returnStatement.ReturnValue.String())
+	}
+
+	out.WriteString(";")
 	return out.String()
 }
 
