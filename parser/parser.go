@@ -62,6 +62,8 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerPrefix(token.INT, parser.parseIntegerLiteral)
 	parser.registerPrefix(token.BANG, parser.parsePrefixExpression)
 	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
+	parser.registerPrefix(token.TRUE, parser.parseBooleanLiteral)
+	parser.registerPrefix(token.FALSE, parser.parseBooleanLiteral)
 
 	parser.infixParseFns = make(map[token.TokenType]infixParseFn)
 	parser.registerInfix(token.PLUS, parser.parseInfixExpression)
@@ -117,6 +119,8 @@ func (parser *Parser) parseStatement() ast.Statement {
 	}
 }
 
+// Parsing Statements
+
 func (parser *Parser) parseLetStatement() ast.Statement {
 	statement := &ast.LetStatement{Token: parser.currToken}
 
@@ -163,6 +167,8 @@ func (parser *Parser) parseExpressionStatement() ast.Statement {
 	return statement
 }
 
+// Main Parsing Function. Parsing an Expression based on the inputted precedence
+
 func (parser *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := parser.prefixParseFns[parser.currToken.Type]
 	if prefix == nil {
@@ -184,23 +190,7 @@ func (parser *Parser) parseExpression(precedence int) ast.Expression {
 	return leftExpression
 }
 
-func (parser *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
-}
-
-func (parser *Parser) parseIntegerLiteral() ast.Expression {
-	literal := &ast.IntegerLiteral{Token: parser.currToken}
-
-	value, err := strconv.ParseInt(parser.currToken.Literal, 0, 64)
-	if err != nil {
-		errorMsg := fmt.Sprintf("Could not parse %q as an integer", literal.Value)
-		parser.errors = append(parser.errors, errorMsg)
-		return nil
-	}
-
-	literal.Value = value
-	return literal
-}
+// Parsing Prefix vs Infix Expressions
 
 func (parser *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
@@ -227,6 +217,32 @@ func (parser *Parser) parseInfixExpression(leftExpression ast.Expression) ast.Ex
 
 	return expression
 }
+
+// Parsing Literals
+
+func (parser *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
+}
+
+func (parser *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{Token: parser.currToken}
+
+	value, err := strconv.ParseInt(parser.currToken.Literal, 0, 64)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Could not parse %q as an integer", literal.Value)
+		parser.errors = append(parser.errors, errorMsg)
+		return nil
+	}
+
+	literal.Value = value
+	return literal
+}
+
+func (parser *Parser) parseBooleanLiteral() ast.Expression {
+	return &ast.BooleanLiteral{Token: parser.currToken, Value: parser.isCurrTokenType(token.TRUE)}
+}
+
+// Helper functions
 
 func (parser *Parser) isCurrTokenType(expectedTokenType token.TokenType) bool {
 	return parser.currToken.Type == expectedTokenType
@@ -258,7 +274,8 @@ func (parser *Parser) currPrecedence() int {
 	return LOWEST
 }
 
-// Errors - get all parser errors
+// Parsing Errors
+
 func (parser *Parser) Errors() []string {
 	return parser.errors
 }
