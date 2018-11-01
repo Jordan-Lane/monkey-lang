@@ -5,6 +5,11 @@ import (
 	"monkeylang/object"
 )
 
+var (
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
+)
+
 func Eval(node ast.Node) object.Object {
 	switch castedNode := node.(type) {
 	case *ast.Program:
@@ -14,7 +19,7 @@ func Eval(node ast.Node) object.Object {
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: castedNode.Value}
 	case *ast.BooleanLiteral:
-		return &object.Boolean{Value: castedNode.Value}
+		return nativeBoolToBooleanObject(castedNode.Value)
 	}
 
 	return nil
@@ -28,4 +33,11 @@ func evalStatements(statements []ast.Statement) object.Object {
 	}
 
 	return result
+}
+
+func nativeBoolToBooleanObject(boolean bool) *object.Boolean {
+	if boolean {
+		return TRUE
+	}
+	return FALSE
 }
