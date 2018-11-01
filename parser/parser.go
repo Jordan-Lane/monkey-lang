@@ -34,6 +34,7 @@ var infixPrecedences = map[token.TokenType]int{
 	token.STAR:       PRODUCT,
 	token.SLASH:      PRODUCT,
 	token.FUNCTION:   CALL,
+	token.LPAREN:     CALL,
 }
 
 // Parser ...
@@ -77,6 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 	parser.registerInfix(token.GREATER, parser.parseInfixExpression)
 	parser.registerInfix(token.EQUAL, parser.parseInfixExpression)
 	parser.registerInfix(token.BANG_EQUAL, parser.parseInfixExpression)
+	parser.registerInfix(token.LPAREN, parser.parseFunctionCallExpression)
 
 	return parser
 }
@@ -285,15 +287,12 @@ func (parser *Parser) parseFunctionLiteral() ast.Expression {
 	}
 
 	functionLiteral.Parameters = parser.parseFunctionParameters()
-	fmt.Printf("CURR TOKEN AFTER PARSING PARAMETERS: " + parser.currToken.Literal + "\n")
 
 	if !parser.expectPeek(token.LBRACE) {
 		return nil
 	}
 
-	fmt.Printf("BEFORE PARSING BLOCK: " + parser.currToken.Literal + "\n")
 	functionLiteral.Body = parser.parseBlockStatement()
-	fmt.Printf("AFTER PARSING BLOCK: " + parser.currToken.Literal + "\n")
 
 	return functionLiteral
 }
@@ -323,6 +322,36 @@ func (parser *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return parameters
+}
+
+func (parser *Parser) parseFunctionCallExpression(functionName ast.Expression) ast.Expression {
+	expression := &ast.CallExpression{Token: parser.currToken, Function: functionName}
+	expression.Arguments = parser.parseFunctionArguments()
+	return expression
+}
+
+func (parser *Parser) parseFunctionArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if parser.isPeekTokenType(token.RPAREN) {
+		parser.nextToken()
+		return args
+	}
+
+	parser.nextToken()
+	args = append(args, parser.parseExpression(LOWEST))
+
+	for parser.isPeekTokenType(token.COMMA) {
+		parser.nextToken()
+		parser.nextToken()
+		args = append(args, parser.parseExpression(LOWEST))
+	}
+
+	if !parser.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return args
 }
 
 func (parser *Parser) parseReturnStatement() ast.Statement {

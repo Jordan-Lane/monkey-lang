@@ -101,7 +101,7 @@ func (prefixExpression *PrefixExpression) String() string {
 	return out.String()
 }
 
-// InfixExpression struct - implements Exprssion Interface
+// InfixExpression struct - implements Expression Interface
 type InfixExpression struct {
 	Token    token.Token
 	Left     Expression
@@ -123,6 +123,7 @@ func (infixExpression *InfixExpression) String() string {
 	return out.String()
 }
 
+// IfExpression struct - implements the Expression interface
 type IfExpression struct {
 	Token       token.Token
 	Condition   Expression
@@ -220,7 +221,32 @@ func (funcLiteral *FunctionLiteral) String() string {
 	return out.String()
 }
 
-// Identifier struct
+// CallExpression struct - implements the Expression interface
+type CallExpression struct {
+	Token     token.Token // "(" token
+	Function  Expression  // Identifier or function literal
+	Arguments []Expression
+}
+
+func (callFunction *CallExpression) expressionNode()      {}
+func (callFunction *CallExpression) TokenLiteral() string { return callFunction.Token.Literal }
+func (callFunction *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, arguement := range callFunction.Arguments {
+		args = append(args, arguement.String())
+	}
+
+	out.WriteString(callFunction.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
+	return out.String()
+}
+
+// Identifier struct - implements the Expression interface
 type Identifier struct {
 	Token token.Token
 	Value string

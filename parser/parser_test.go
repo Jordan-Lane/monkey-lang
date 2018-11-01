@@ -420,6 +420,18 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"!(true == true)",
 			"(!(true == true))",
 		},
+		{
+			"a + add(b * c) + d",
+			"((a + add((b * c))) + d)",
+		},
+		{
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+			"add(a + b + c * d / f + g)",
+			"add((((a + b) + ((c * d) / f)) + g))",
+		},
 	}
 
 	for _, test := range tests {
@@ -606,6 +618,43 @@ func TestFunctionParameters(t *testing.T) {
 	}
 }
 
+func TestFunctionCall(t *testing.T) {
+	input := " add( 2 + 2, 5 * 5, 7)"
+
+	lexer := lexer.New(input)
+	parser := New(lexer)
+
+	program := parser.ParseProgram()
+	checkParseErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ExpressionStatement. Got: %T", program.Statements[0])
+	}
+
+	functionCall, ok := statement.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("Statement.Expression type is incorrect. Expected: *ast.CallFunction. Got %T", statement.Expression)
+	}
+
+	if !testIdentifier(t, functionCall.Function, "add") {
+		return
+	}
+
+	if len(functionCall.Arguments) != 3 {
+		t.Fatalf("Number of FunctionCall.Arguments is incorrect. Expected: 3. Got: %d", len(functionCall.Arguments))
+	}
+
+	testInfixExpression(t, functionCall.Arguments[0], 2, "+", 2)
+	testInfixExpression(t, functionCall.Arguments[1], 5, "*", 5)
+	testLiteralExpression(t, functionCall.Arguments[2], 7)
+
+}
+
 func testLiteralExpression(t *testing.T, expression ast.Expression, expected interface{}) bool {
 
 	// This is a type switch (https://tour.golang.org/methods/16)
@@ -648,7 +697,7 @@ func testIntegerLiteral(t *testing.T, integerLiteral ast.Expression, expectedVal
 func testIdentifier(t *testing.T, identifierLiteral ast.Expression, expectedValue string) bool {
 	identifier, ok := identifierLiteral.(*ast.Identifier)
 	if !ok {
-		t.Fatalf("IdentifierLiteral type is incorrect. Expected *ast.identifer. Got: %T", identifier)
+		t.Fatalf("IdentifierLiteral type is incorrect. Expected *ast.Identifier. Got: %T", identifierLiteral)
 		return false
 	}
 
