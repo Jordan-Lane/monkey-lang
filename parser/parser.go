@@ -239,8 +239,11 @@ func (parser *Parser) parseLetStatement() ast.Statement {
 		return nil
 	}
 
-	// TODO: Currently skipping over the expression
-	for !parser.isCurrTokenType(token.SEMICOLON) {
+	parser.nextToken()
+
+	statement.Value = parser.parseExpression(LOWEST)
+
+	if parser.isPeekTokenType(token.SEMICOLON) {
 		parser.nextToken()
 	}
 
@@ -357,8 +360,11 @@ func (parser *Parser) parseFunctionArguments() []ast.Expression {
 func (parser *Parser) parseReturnStatement() ast.Statement {
 	statement := &ast.ReturnStatement{Token: parser.currToken}
 
-	// TODO: Currently skipping over the expression
-	for !parser.isCurrTokenType(token.SEMICOLON) {
+	parser.nextToken()
+
+	statement.ReturnValue = parser.parseExpression(LOWEST)
+
+	if parser.isPeekTokenType(token.SEMICOLON) {
 		parser.nextToken()
 	}
 

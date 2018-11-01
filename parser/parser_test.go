@@ -9,46 +9,36 @@ import (
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-			let x = 5;
-			let y = 10;
-			let foobar = 838383;
-			`
-	lexer := lexer.New(input)
-	parser := New(lexer)
-
-	program := parser.ParseProgram()
-	checkParseErrors(t, parser)
-
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("Program produced %d statements instead of 3", len(program.Statements))
-	}
-
-	letStatementTests := []struct {
-		expectedIdentifer string
+	tests := []struct {
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
 	}{
-		{"x"},
-		{"y"},
-		{"foobar"},
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
 	}
 
-	for i, test := range letStatementTests {
-		currentStatement := program.Statements[i]
-		if !testLetStatement(t, currentStatement, test.expectedIdentifer) {
-			return
+	for _, test := range tests {
+		lexer := lexer.New(test.input)
+		parser := New(lexer)
+
+		program := parser.ParseProgram()
+		checkParseErrors(t, parser)
+
+		if program == nil {
+			t.Fatalf("ParseProgram() returned nil")
 		}
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+		}
+
+		testLetStatement(t, program.Statements[0], test.input, test.expectedIdentifier, test.expectedValue)
 	}
 }
 
-func testLetStatement(t *testing.T, statement ast.Statement, name string) bool {
-	if statement.TokenLiteral() != "let" {
-		t.Errorf("Statement.TokenLiteral not let. Got: %q", statement.TokenLiteral())
-		return false
-	}
-
+func testLetStatement(t *testing.T, statement ast.Statement, input string, expectedName string, value interface{}) bool {
 	//This line asserts that the statement is a LetStatement (https://tour.golang.org/methods/15)
 	letStatement, ok := statement.(*ast.LetStatement)
 	if !ok {
@@ -56,59 +46,73 @@ func testLetStatement(t *testing.T, statement ast.Statement, name string) bool {
 		return false
 	}
 
-	if letStatement.Name.Value != name {
-		t.Errorf("LetStatement.Name.Value not: %s. Got: %s", name, letStatement.Name.Value)
+	if statement.TokenLiteral() != "let" {
+		t.Errorf("Statement.TokenLiteral not let. Got: %q", statement.TokenLiteral())
 		return false
 	}
 
-	if letStatement.Name.TokenLiteral() != name {
-		t.Errorf("LetStatement.Name.TokenLiteral() not '%s'. Got=%s", name, letStatement.Name.TokenLiteral())
+	if letStatement.Name.Value != expectedName {
+		t.Errorf("LetStatement.Name.Value not: %s. Got: %s", expectedName, letStatement.Name.Value)
 		return false
 	}
 
-	// Later, test the actual expression
+	if letStatement.Name.TokenLiteral() != expectedName {
+		t.Errorf("LetStatement.Name.TokenLiteral() not '%s'. Got=%s", expectedName, letStatement.Name.TokenLiteral())
+		return false
+	}
+
+	if !testLiteralExpression(t, letStatement.Value, value) {
+		return false
+	}
 
 	return true
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-			return 5;
-			return x;
-			return add(x+y);
-			`
-	lexer := lexer.New(input)
-	parser := New(lexer)
-
-	program := parser.ParseProgram()
-	checkParseErrors(t, parser)
-
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("Program produced %d statements instead of 3", len(program.Statements))
+	tests := []struct {
+		input         string
+		expectedValue interface{}
+	}{
+		{"return 5;", 5},
+		{"return x;", "x"},
+		{"return true;", true},
 	}
 
-	for _, currentStatement := range program.Statements {
-		if !testReturnStatement(t, currentStatement) {
-			return
+	for _, test := range tests {
+		lexer := lexer.New(test.input)
+		parser := New(lexer)
+
+		program := parser.ParseProgram()
+		checkParseErrors(t, parser)
+
+		if program == nil {
+			t.Fatalf("ParseProgram() returned nil")
 		}
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program produced %d statements instead of 1", len(program.Statements))
+		}
+
+		testReturnStatement(t, program.Statements[0], test.expectedValue)
 	}
 }
 
-func testReturnStatement(t *testing.T, statement ast.Statement) bool {
-	// Check that the statement token is a return
-	expected := "return"
-	if statement.TokenLiteral() != expected {
-		t.Errorf("Statement.TokenLiteral is incorrect. Expected: %q. Got %q", expected, statement.TokenLiteral())
+func testReturnStatement(t *testing.T, expression ast.Statement, expectedValue interface{}) bool {
+
+	returnStatement, ok := expression.(*ast.ReturnStatement)
+	if !ok {
+		t.Fatalf("Statement type is incorrect. Expected: *ast.ReturnStatement. Got: %T", expression)
 		return false
 	}
 
-	// Assert that the statement is a return statement
-	_, ok := statement.(*ast.ReturnStatement)
-	if !ok {
-		t.Errorf("Statement type is incorrect. Expected: *ast.ReturnStatement. Got %T", statement)
+	// Check that the statement token is a return
+	expectedToken := "return"
+	if returnStatement.TokenLiteral() != expectedToken {
+		t.Errorf("Statement.TokenLiteral is incorrect. Expected: %q. Got %q", expectedToken, returnStatement.TokenLiteral())
+		return false
+	}
+
+	if !testLiteralExpression(t, returnStatement.ReturnValue, expectedValue) {
 		return false
 	}
 
