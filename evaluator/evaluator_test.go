@@ -22,9 +22,7 @@ func TestBangOperator(t *testing.T) {
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		if !testBooleanObject(t, evaluated, test.expectedBool) {
-			t.Fatalf("Full input: " + test.input)
-		}
+		testBooleanObject(t, evaluated, test.expectedBool)
 	}
 }
 func TestEvalIntegerExpression(t *testing.T) {
@@ -51,9 +49,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		if !testIntegerObject(t, evaluated, test.expectedValue) {
-			t.Fatalf("Full input: " + test.input)
-		}
+		testIntegerObject(t, evaluated, test.expectedValue)
 	}
 }
 
@@ -78,9 +74,7 @@ func TestEvalBoolExpression(t *testing.T) {
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		if !testBooleanObject(t, evaluated, test.expectedBool) {
-			t.Fatalf("Full input: " + test.input)
-		}
+		testBooleanObject(t, evaluated, test.expectedBool)
 	}
 
 }
@@ -103,12 +97,35 @@ func TestIfExpression(t *testing.T) {
 		evaluated := runMonkeyLang(test.input)
 		expectedInteger, ok := test.expectedValue.(int)
 		if ok {
-			if !testIntegerObject(t, evaluated, int64(expectedInteger)) {
-				t.Fatalf("Full input: " + test.input)
-			}
+			testIntegerObject(t, evaluated, int64(expectedInteger))
 		} else {
 			testNullObject(t, evaluated)
 		}
+	}
+}
+
+func TestReturnStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"return 10;", 10},
+		{"return 10; 9;", 10},
+		{"return 2 * 5; 9;", 10},
+		{"9; return 2 * 5; 9;", 10},
+		{
+			` if (10 > 1) {
+				 if (10 > 1) {
+				   return 10;
+			}
+			return 1; }
+			`,
+			10,
+		},
+	}
+	for _, test := range tests {
+		evaluated := runMonkeyLang(test.input)
+		testIntegerObject(t, evaluated, test.expected)
 	}
 }
 

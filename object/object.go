@@ -3,9 +3,10 @@ package object
 import "fmt"
 
 const (
-	INTEGER_OBJ = "INTEGER"
-	BOOLEAN_OBJ = "BOOLEAN"
-	NULL_OBJ    = "NULL"
+	INTEGER_OBJ      = "INTEGER"
+	BOOLEAN_OBJ      = "BOOLEAN"
+	NULL_OBJ         = "NULL"
+	RETURN_VALUE_OBJ = "RETURN_VALUE"
 )
 
 type ObjectType string
@@ -33,3 +34,10 @@ type Null struct{}
 
 func (null *Null) Type() ObjectType { return NULL_OBJ }
 func (null *Null) Inspect() string  { return fmt.Sprintf("null") }
+
+type ReturnValue struct {
+	Value Object
+}
+
+func (returnValue *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
+func (returnValue *ReturnValue) Inspect() string  { return returnValue.Value.Inspect() }
