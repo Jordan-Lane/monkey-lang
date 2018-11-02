@@ -13,12 +13,27 @@ func TestEvalIntegerExpression(t *testing.T) {
 		expectedValue int64
 	}{
 		{"5", 5},
-		{"23", 23},
+		{"10", 10},
+		{"-5", -5},
+		{"-10", -10},
+		{"5 + 5 + 5 + 5 - 10", 10},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"-50 + 100 + -50", 0},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"20 + 2 * -10", 0},
+		{"50 / 2 * 2 + 10", 60},
+		{"2 * (5 + 10)", 30},
+		{"3 * 3 * 3 + 10", 37},
+		{"3 * (3 * 3) + 10", 37},
+		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
 	}
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		testIntegerObject(t, evaluated, test.expectedValue)
+		if !testIntegerObject(t, evaluated, test.expectedValue) {
+			t.Fatalf("Full input: " + test.input)
+		}
 	}
 }
 
@@ -33,9 +48,32 @@ func TestEvalBoolExpression(t *testing.T) {
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		testBooleanObject(t, evaluated, test.expectedBool)
+		if !testBooleanObject(t, evaluated, test.expectedBool) {
+			t.Fatalf("Full input: " + test.input)
+		}
 	}
 
+}
+
+func TestBangOperator(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedBool bool
+	}{
+		{"!true", false},
+		{"!false", true},
+		{"!5", false},
+		{"!!true", true},
+		{"!!false", false},
+		{"!!5", true},
+	}
+
+	for _, test := range tests {
+		evaluated := runMonkeyLang(test.input)
+		if !testBooleanObject(t, evaluated, test.expectedBool) {
+			t.Fatalf("Full input: " + test.input)
+		}
+	}
 }
 
 func runMonkeyLang(input string) object.Object {
@@ -49,12 +87,12 @@ func runMonkeyLang(input string) object.Object {
 func testIntegerObject(t *testing.T, obj object.Object, expectedValue int64) bool {
 	integerObject, ok := obj.(*object.Integer)
 	if !ok {
-		t.Fatalf("Object type is incorrect. Expected: *object.Integer. Got: %T", obj)
+		t.Errorf("Object type is incorrect. Expected: *object.Integer. Got: %T", obj)
 		return false
 	}
 
 	if integerObject.Value != expectedValue {
-		t.Fatalf("IntegerObject value is incorrect. Expected: %q. Got: %q", expectedValue, integerObject.Value)
+		t.Errorf("IntegerObject value is incorrect. Expected: %d. Got: %d", expectedValue, integerObject.Value)
 		return false
 	}
 
@@ -64,7 +102,7 @@ func testIntegerObject(t *testing.T, obj object.Object, expectedValue int64) boo
 func testBooleanObject(t *testing.T, obj object.Object, expectedValue bool) bool {
 	booleanObject, ok := obj.(*object.Boolean)
 	if !ok {
-		t.Fatalf("Object type is incorrect. Expected: *object.Boolean. Got: %T", obj)
+		t.Errorf("Object type is incorrect. Expected: *object.Boolean. Got: %T", obj)
 		return false
 	}
 
