@@ -155,7 +155,6 @@ func evalBooleanInfixExpression(operator string, left object.Object, right objec
 	rightValue := right.(*object.Boolean).Value
 
 	//TODO Add support for & and |
-
 	switch operator {
 	case "==":
 		return nativeBoolToBooleanObject(leftValue == rightValue)
