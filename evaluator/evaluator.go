@@ -28,6 +28,10 @@ func Eval(node ast.Node) object.Object {
 		return &object.Integer{Value: castedNode.Value}
 	case *ast.BooleanLiteral:
 		return nativeBoolToBooleanObject(castedNode.Value)
+	case *ast.BlockStatement:
+		return evalStatements(castedNode.Statements)
+	case *ast.IfExpression:
+		return evalIfExpression(castedNode)
 	}
 
 	return nil
@@ -47,6 +51,8 @@ func evalInfixExpression(operator string, left object.Object, right object.Objec
 	switch {
 	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
+	case left.Type() == object.BOOLEAN_OBJ && right.Type() == object.BOOLEAN_OBJ:
+		return evalBooleanInfixExpression(operator, left, right)
 	default:
 		return NULL
 	}
@@ -65,6 +71,30 @@ func evalIntegerInfixExpression(operator string, left object.Object, right objec
 		return &object.Integer{Value: leftValue * rightValue}
 	case "/":
 		return &object.Integer{Value: leftValue / rightValue}
+	case "<":
+		return nativeBoolToBooleanObject(leftValue < rightValue)
+	case ">":
+		return nativeBoolToBooleanObject(leftValue > rightValue)
+	case "==":
+		return nativeBoolToBooleanObject(leftValue == rightValue)
+	case "!=":
+		return nativeBoolToBooleanObject(leftValue != rightValue)
+	default:
+		return NULL
+	}
+}
+
+func evalBooleanInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	leftValue := left.(*object.Boolean).Value
+	rightValue := right.(*object.Boolean).Value
+
+	//TODO Add support for & and |
+
+	switch operator {
+	case "==":
+		return nativeBoolToBooleanObject(leftValue == rightValue)
+	case "!=":
+		return nativeBoolToBooleanObject(leftValue != rightValue)
 	default:
 		return NULL
 	}
@@ -78,6 +108,18 @@ func evalPrefix(operator string, right object.Object) object.Object {
 		return evalMinusPrefixExpression(right)
 	default:
 		return nil
+	}
+}
+
+func evalIfExpression(ifExpression *ast.IfExpression) object.Object {
+	condition := Eval(ifExpression.Condition)
+
+	if isTruthy(condition) {
+		return Eval(ifExpression.Consequence)
+	} else if ifExpression.Alternative != nil {
+		return Eval(ifExpression.Alternative)
+	} else {
+		return NULL
 	}
 }
 
@@ -107,4 +149,17 @@ func nativeBoolToBooleanObject(boolean bool) *object.Boolean {
 		return TRUE
 	}
 	return FALSE
+}
+
+func isTruthy(obj object.Object) bool {
+	switch obj {
+	case NULL:
+		return false
+	case TRUE:
+		return true
+	case FALSE:
+		return false
+	default:
+		return true
+	}
 }

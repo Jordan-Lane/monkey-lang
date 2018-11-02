@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+func TestBangOperator(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedBool bool
+	}{
+		{"!true", false},
+		{"!false", true},
+		{"!5", false},
+		{"!!true", true},
+		{"!!false", false},
+		{"!!5", true},
+	}
+
+	for _, test := range tests {
+		evaluated := runMonkeyLang(test.input)
+		if !testBooleanObject(t, evaluated, test.expectedBool) {
+			t.Fatalf("Full input: " + test.input)
+		}
+	}
+}
 func TestEvalIntegerExpression(t *testing.T) {
 	tests := []struct {
 		input         string
@@ -44,6 +64,16 @@ func TestEvalBoolExpression(t *testing.T) {
 	}{
 		{"true", true},
 		{"false", false},
+		{"2 < 3", true},
+		{"10 > 100", false},
+		{"5 == 5", true},
+		{"5 == 20", false},
+		{"30 != 1", true},
+		{"30 != 30", false},
+		{"true == true", true},
+		{"false != false", false},
+		{"(2 < 3) == true", true},
+		{"(1000 < 10) == true", false},
 	}
 
 	for _, test := range tests {
@@ -55,23 +85,29 @@ func TestEvalBoolExpression(t *testing.T) {
 
 }
 
-func TestBangOperator(t *testing.T) {
+func TestIfExpression(t *testing.T) {
 	tests := []struct {
-		input        string
-		expectedBool bool
+		input         string
+		expectedValue interface{}
 	}{
-		{"!true", false},
-		{"!false", true},
-		{"!5", false},
-		{"!!true", true},
-		{"!!false", false},
-		{"!!5", true},
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", nil},
+		{"if (1) { 10 }", 10},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", nil},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
 	}
 
 	for _, test := range tests {
 		evaluated := runMonkeyLang(test.input)
-		if !testBooleanObject(t, evaluated, test.expectedBool) {
-			t.Fatalf("Full input: " + test.input)
+		expectedInteger, ok := test.expectedValue.(int)
+		if ok {
+			if !testIntegerObject(t, evaluated, int64(expectedInteger)) {
+				t.Fatalf("Full input: " + test.input)
+			}
+		} else {
+			testNullObject(t, evaluated)
 		}
 	}
 }
@@ -108,6 +144,15 @@ func testBooleanObject(t *testing.T, obj object.Object, expectedValue bool) bool
 
 	if booleanObject.Value != expectedValue {
 		t.Fatalf("BooleanObject value is incorrect. Expected: %t. Got: %t", expectedValue, booleanObject.Value)
+		return false
+	}
+
+	return true
+}
+
+func testNullObject(t *testing.T, obj object.Object) bool {
+	if obj != NULL {
+		t.Errorf("Object type is incorrect. Expected: *ast.Null. Got %T", obj)
 		return false
 	}
 
