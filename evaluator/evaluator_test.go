@@ -164,9 +164,12 @@ func TestErrorHandling(t *testing.T) {
 		  		return true + false;
 			}	
 			return 1; 
-		  }
-		`,
+		  	}`,
 			"Unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"foobar",
+			"Unknown identifier: foobar",
 		},
 	}
 
@@ -174,14 +177,30 @@ func TestErrorHandling(t *testing.T) {
 		evaluated := runMonkeyLang(test.input)
 		errorObject, ok := evaluated.(*object.Error)
 		if !ok {
-			t.Errorf("no error object returned. got=%T(%+v)",
+			t.Errorf("No error object returned. got=%T(%+v)",
 				evaluated, evaluated)
 			continue
 		}
 		if errorObject.Message != test.expectedMessage {
-			t.Errorf("wrong error message. expected=%q, got=%q",
+			t.Errorf("Wrong error message. expected=%q, got=%q",
 				test.expectedMessage, errorObject.Message)
 		}
+	}
+}
+
+func TestLetStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b;", 5},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	}
+
+	for _, test := range tests {
+		testIntegerObject(t, runMonkeyLang(test.input), test.expected)
 	}
 }
 
@@ -189,8 +208,9 @@ func runMonkeyLang(input string) object.Object {
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
 	program := parser.ParseProgram()
+	env := object.NewEnvironment()
 
-	return Eval(program)
+	return Eval(env, program)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expectedValue int64) bool {
