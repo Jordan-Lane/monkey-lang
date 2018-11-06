@@ -204,6 +204,30 @@ func TestLetStatements(t *testing.T) {
 	}
 }
 
+func TestFunctionObject(t *testing.T) {
+	input := "fn ( x ) { x + 2; }"
+
+	evaluated := runMonkeyLang(input)
+	function, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("Object type is incorrect. Expected: *object.Function. Got: %T", evaluated)
+	}
+
+	if len(function.Parameters) != 1 {
+		t.Fatalf("Number of parameters is incorrect. Expected: 1. Got: %d", len(function.Parameters))
+	}
+
+	expectedParam := "x"
+	if function.Parameters[0].String() != expectedParam {
+		t.Fatalf("Function.Parameter[0] is incorrect. Expected: %q. Got: %q", expectedParam, function.Parameters[0])
+	}
+
+	expectedBody := "(x + 2)"
+	if function.Body.String() != expectedBody {
+		t.Fatalf("Function.Body is incorrect. Expected: %q. Got: %q", expectedBody, function.Body.String())
+	}
+}
+
 func runMonkeyLang(input string) object.Object {
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
