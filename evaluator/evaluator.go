@@ -56,6 +56,19 @@ func Eval(env *object.Environment, node ast.Node) object.Object {
 		return &object.ReturnValue{Value: value}
 	case *ast.IfExpression:
 		return evalIfExpression(env, castedNode)
+	case *ast.FunctionLiteral:
+		params := castedNode.Parameters
+		body := castedNode.Body
+		return &object.Function{Parameters: params, Env: env, Body: body}
+	case *ast.CallExpression:
+		function := Eval(env, castedNode.Function)
+		if isError(function) {
+			return function
+		}
+		args := evalExpressions(env, castedNode.Arguments)
+		if len(args) == 1 && isError(args[0]) {
+			return args
+		}
 	}
 	return nil
 }
@@ -102,6 +115,20 @@ func evalBlockStatement(env *object.Environment, block *ast.BlockStatement) obje
 				return result
 			}
 		}
+	}
+
+	return result
+}
+
+func evalExpressions(env *object.Environment, expressions []ast.Expression) []object.Object {
+	var result []object.Object
+
+	for _, expression := range expressions {
+		evaluated := Eval(env, expression)
+		if isError(evaluated) {
+			return []object.Object{evaluated}
+		}
+		result = append(result, evaluated)
 	}
 
 	return result
