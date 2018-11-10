@@ -67,8 +67,9 @@ func Eval(env *object.Environment, node ast.Node) object.Object {
 		}
 		args := evalExpressions(env, castedNode.Arguments)
 		if len(args) == 1 && isError(args[0]) {
-			return args
+			return args[0]
 		}
+		return applyFunction(function, args)
 	}
 	return nil
 }
@@ -199,6 +200,19 @@ func evalBooleanInfixExpression(env *object.Environment, operator string, left o
 	}
 }
 
+func evalBangPrefixExpression(right object.Object) object.Object {
+	switch right {
+	case TRUE:
+		return FALSE
+	case FALSE:
+		return TRUE
+	case NULL:
+		return TRUE
+	default:
+		return FALSE
+	}
+}
+
 func evalIfExpression(env *object.Environment, ifExpression *ast.IfExpression) object.Object {
 	condition := Eval(env, ifExpression.Condition)
 	if isError(condition) {
@@ -214,17 +228,33 @@ func evalIfExpression(env *object.Environment, ifExpression *ast.IfExpression) o
 	}
 }
 
-func evalBangPrefixExpression(right object.Object) object.Object {
-	switch right {
-	case TRUE:
-		return FALSE
-	case FALSE:
-		return TRUE
-	case NULL:
-		return TRUE
-	default:
-		return FALSE
+func applyFunction(funcObj object.Object, args []object.Object) object.Object {
+	function, ok := funcObj.(*object.Function)
+	if !ok {
+		return newError("Not a function %T", function)
 	}
+
+	extendedEnv := extendFunctionEnv(function, args)
+	evaluated := Eval(extendedEnv, function.Body)
+
+	return unwrapReturnValue(evaluated)
+}
+
+func extendFunctionEnv(function *object.Function, args []object.Object) *object.Environment {
+	env := object.NewEnclosedEnvrionment(function.Env)
+
+	for i, param := range function.Parameters {
+		env.Set(param.Value, args[i])
+	}
+
+	return env
+}
+
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok {
+		return returnValue
+	}
+	return obj
 }
 
 func evalIdentifier(env *object.Environment, identifier *ast.Identifier) object.Object {
