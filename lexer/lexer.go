@@ -70,6 +70,9 @@ func (lexer *Lexer) NextToken() token.Token {
 		tok = token.NewToken(token.LBRACE, lexer.char)
 	case '}':
 		tok = token.NewToken(token.RBRACE, lexer.char)
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = lexer.readString()
 	case 0:
 		tok.Type = token.EOF
 		tok.Literal = ""
@@ -127,6 +130,18 @@ func (lexer *Lexer) skipWhitespace() {
 	for lexer.char == ' ' || lexer.char == '\t' || lexer.char == '\n' || lexer.char == '\r' {
 		lexer.readChar()
 	}
+}
+
+func (lexer *Lexer) readString() string {
+	startPosition := lexer.position + 1
+	for {
+		lexer.readChar()
+		if lexer.char == '"' || lexer.char == 0 {
+			break
+		}
+	}
+
+	return lexer.input[startPosition:lexer.position]
 }
 
 func isLetter(char byte) bool {

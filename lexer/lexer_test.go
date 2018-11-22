@@ -30,6 +30,9 @@ func TestNextToken(t *testing.T) {
 
 		 5 == 5;
 		 5 != 10;
+
+		 "foobar"
+		 "bar foo"
 	 	`
 
 	// Learning: A slice of structs
@@ -110,6 +113,8 @@ func TestNextToken(t *testing.T) {
 		{token.BANG_EQUAL, "!="},
 		{token.INT, "10"},
 		{token.SEMICOLON, ";"},
+		{token.STRING, "foobar"},
+		{token.STRING, "bar foo"},
 		{token.EOF, ""},
 	}
 
