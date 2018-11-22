@@ -36,6 +36,8 @@ func Eval(env *object.Environment, node ast.Node) object.Object {
 		return evalPrefixExpression(env, castedNode.Operator, right)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: castedNode.Value}
+	case *ast.StringLiteral:
+		return &object.String{Value: castedNode.Value}
 	case *ast.BooleanLiteral:
 		return nativeBoolToBooleanObject(castedNode.Value)
 	case *ast.Identifier:

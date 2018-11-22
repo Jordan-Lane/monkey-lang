@@ -53,6 +53,20 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World!"`
+
+	evaluated := runMonkeyLang(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("Object type is incorrect. Expected: *object.String. Got: %T", evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Fatalf("String value is incorrect. Expected: 'Hello World!'. Got: '%s'", str.Value)
+	}
+}
+
 func TestEvalBoolExpression(t *testing.T) {
 	tests := []struct {
 		input        string
