@@ -45,23 +45,6 @@ func (program *Program) String() string {
 	return out.String()
 }
 
-// BlockStatementStruct - implements Statement Interface
-type BlockStatement struct {
-	Token      token.Token
-	Statements []Statement
-}
-
-func (blockStatement *BlockStatement) statementNode()       {}
-func (blockStatement *BlockStatement) TokenLiteral() string { return blockStatement.Token.Literal }
-func (blockStatement *BlockStatement) String() string {
-	var out bytes.Buffer
-
-	for _, statement := range blockStatement.Statements {
-		out.WriteString(statement.String())
-	}
-	return out.String()
-}
-
 // ExpressionStatement struct - implements Statement Interface
 type ExpressionStatement struct {
 	Token      token.Token
@@ -79,6 +62,23 @@ func (expressionStatement *ExpressionStatement) String() string {
 		return expressionStatement.Expression.String()
 	}
 	return ""
+}
+
+// BlockStatementStruct - implements Statement Interface
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (blockStatement *BlockStatement) statementNode()       {}
+func (blockStatement *BlockStatement) TokenLiteral() string { return blockStatement.Token.Literal }
+func (blockStatement *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	for _, statement := range blockStatement.Statements {
+		out.WriteString(statement.String())
+	}
+	return out.String()
 }
 
 // PrefixExpression struct - implements Expression interface

@@ -16,7 +16,7 @@ type Lexer struct {
 // New - Creates new lexer pointer
 func New(input string) *Lexer {
 	lexer := &Lexer{input: input}
-	lexer.readChar() //inititalize pointers
+	lexer.inititalizePointers()
 	return lexer
 }
 
@@ -93,9 +93,13 @@ func (lexer *Lexer) NextToken() token.Token {
 	return tok
 }
 
+func (lexer *Lexer) inititalizePointers() {
+	lexer.readChar()
+}
+
 func (lexer *Lexer) readChar() {
 	if lexer.readPosition >= len(lexer.input) {
-		lexer.char = 0 //ASCII null
+		lexer.char = 0
 	} else {
 		lexer.char = lexer.input[lexer.readPosition]
 	}
@@ -126,12 +130,6 @@ func (lexer *Lexer) readNumber() string {
 	return lexer.input[startPosition:lexer.position]
 }
 
-func (lexer *Lexer) skipWhitespace() {
-	for lexer.char == ' ' || lexer.char == '\t' || lexer.char == '\n' || lexer.char == '\r' {
-		lexer.readChar()
-	}
-}
-
 func (lexer *Lexer) readString() string {
 	startPosition := lexer.position + 1
 	for {
@@ -142,6 +140,12 @@ func (lexer *Lexer) readString() string {
 	}
 
 	return lexer.input[startPosition:lexer.position]
+}
+
+func (lexer *Lexer) skipWhitespace() {
+	for lexer.char == ' ' || lexer.char == '\t' || lexer.char == '\n' || lexer.char == '\r' {
+		lexer.readChar()
+	}
 }
 
 func isLetter(char byte) bool {
