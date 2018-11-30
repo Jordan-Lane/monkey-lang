@@ -231,15 +231,17 @@ func evalIfExpression(env *object.Environment, ifExpression *ast.IfExpression) o
 }
 
 func applyFunction(funcObj object.Object, args []object.Object) object.Object {
-	function, ok := funcObj.(*object.Function)
-	if !ok {
+
+	switch function := funcObj.(type) {
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(function, args)
+		evaluated := Eval(extendedEnv, function.Body)
+		return unwrapReturnValue(evaluated)
+	case *object.Builtin:
+		return function.Fn(args...)
+	default:
 		return newError("Not a function %T", function)
 	}
-
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(extendedEnv, function.Body)
-
-	return unwrapReturnValue(evaluated)
 }
 
 func extendFunctionEnv(function *object.Function, args []object.Object) *object.Environment {
@@ -260,12 +262,15 @@ func unwrapReturnValue(obj object.Object) object.Object {
 }
 
 func evalIdentifier(env *object.Environment, identifier *ast.Identifier) object.Object {
-	value, ok := env.Get(identifier.Value)
-	if !ok {
-		return newError("Unknown identifier: %s", identifier.Value)
+	if value, ok := env.Get(identifier.Value); ok {
+		return value
 	}
-	return value
 
+	if value, ok := builtins[identifier.Value]; ok {
+		return value
+	}
+
+	return newError("Unknown identifier: %s", identifier.Value)
 }
 
 func evalMinusPrefixExpression(right object.Object) object.Object {

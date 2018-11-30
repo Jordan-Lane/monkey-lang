@@ -270,7 +270,7 @@ func TestBuiltinLenFunction(t *testing.T) {
 		{`len("")`, 0},
 		{`len("Hello World!")`, 12},
 		{`len("Test")`, 4},
-		{`len(1)`, "Invalid argument to `len` function. Expected: STRING, Got: INTEGER"},
+		{`len(1)`, "Invalid argument to `len` function. Got: INTEGER"},
 		{`len("one", "two")`, "Invalid number of argument to `len` function. Expected: 1, Got: 2"},
 	}
 
