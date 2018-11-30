@@ -262,6 +262,40 @@ func TestFunctionApplication(t *testing.T) {
 	}
 }
 
+func TestBuiltinLenFunction(t *testing.T) {
+	tests := []struct {
+		input         string
+		expectedValue interface{}
+	}{
+		{`len("")`, 0},
+		{`len("Hello World!")`, 12},
+		{`len("Test")`, 4},
+		{`len(1)`, "Invalid argument to `len` function. Expected: STRING, Got: INTEGER"},
+		{`len("one", "two")`, "Invalid number of argument to `len` function. Expected: 1, Got: 2"},
+	}
+
+	for _, test := range tests {
+		evaluated := runMonkeyLang(test.input)
+
+		switch expected := test.expectedValue.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("Object type is incorrect. Expected: object.Error. Got: %T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("Invalid error message. Expected: %s. Got: %s", expected, errObj.Message)
+			}
+
+		}
+
+	}
+}
+
 func runMonkeyLang(input string) object.Object {
 	lexer := lexer.New(input)
 	parser := parser.New(lexer)
